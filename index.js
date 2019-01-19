@@ -4,19 +4,27 @@ const { writeFileSync } = require('fs')
 
 
 const extractRelevantData = data => data
-  .map(({ cardContent, cardIdString }) => ({
-    id: cardIdString,
-    question: cardContent.question,
-    answer: striptags(cardContent.answer).split("\n")[0],
-    label: cardContent.answer.split("\n")[0],
-    example: cardContent.answerExample,
-    role: striptags(cardContent.questionExample).split("\n")[0],
-  }))
+  .map(({ cardContent, cardIdString }) => {
+
+    const sanitizedExample = striptags(cardContent.answerExample)
+    let example = sanitizedExample
+    if (sanitizedExample.includes("pl.")) {
+      const [trash, ...usefull] = sanitizedExample.split(/(?=[A-Z])/)
+      example = usefull.join("")
+    }
+    return {
+      id: cardIdString,
+      question: cardContent.question,
+      answer: striptags(cardContent.answer).split("\n")[0],
+      example: example,
+      role: striptags(cardContent.questionExample).split("\n")[0],
+    }
+  })
 
 const transformToTable = relevantData => {
-  const tableHeaders = [ "id", "foreign", "native", "label", "example", "role" ]
+  const tableHeaders = [ "id", "foreign", "native", "example", "role" ]
   return [tableHeaders].concat(
-    relevantData.map(d => [d.id, d.question, d.answer, d.label, d.example, d.role])
+    relevantData.map(d => [d.id, d.answer, d.question, d.example, d.role])
   )
 }
 
